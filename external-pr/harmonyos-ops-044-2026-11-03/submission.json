@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "submissionId": "harmonyos-ops-044-2026-11-03",
+  "benchmark": {
+    "name": "custom",
+    "justification": "A private fixture suite (search/edit/aggregate tasks over a small pseudo-repository) used to pilot the framework on HarmonyOS arm64 with the OPS plugin; it is not a public benchmark and makes no public-benchmark claim.",
+    "dataset": "ops-ga local fixture suite v2 (9 tasks: 3 train / 2 gate / 4 test)",
+    "revision": "9a179461b4b13d7e0f4cb39117c61c37599047690bdf210758dde9095e3b6ac6",
+    "harnessRepository": "https://github.com/Tranquillitatis-Lab/ops-ga",
+    "harnessRevision": "2e0db7541acb1d47b833677c8e7b0f4767c4732cc2987bfc97b8130985371b79",
+    "split": "test",
+    "selectionProtocol": "candidates selected on train + tuning gate only; the test split was opened once by validate and never used for selection",
+    "optimizationAndTestDisjoint": true
+  },
+  "environment": {
+    "dsh": "dsh 0.2.1-rc.2 source build @ 687f282e8625c6b8d11ff58211a90524be2e4317, node 26.10.0, HarmonyOS MNT-W72C",
+    "opsBaseline": "dsh-ops 0.4.4 from the official npm package (release tag v0.4.4); native worker rebuilt from that tag for aarch64-linux-ohos with three OHOS-only adaptations (cap-primitives openat2 guard, deepest-openable-anchor path walk, best-effort inherited ACL clear); worker sha256 4ffd59077ad49af4c6439fa9265096a4e53f8f1459f0dbe87f3b2f0648de9b33",
+    "opsCandidate": "winner guidance from candidate.json (no OPS source change)",
+    "provider": "deepseek-official",
+    "model": "deepseek-flash",
+    "reasoningEffort": "high",
+    "permission": "danger-full-access (host cannot enforce a sandbox; acknowledged, see reproduce.json sandbox)",
+    "toolMode": "native OPS tools (ops_glob/ops_grep/ops_replace/ops_bash) + built-ins"
+  },
+  "artifacts": {
+    "optimization": {
+      "path": "optimization-package.zip",
+      "sha256": "08a9f9a8b7c555b2822815a28111ea11c85d233d8f8c9123e8f412c84e6c2019"
+    },
+    "evidence": {
+      "path": "evidence.json",
+      "sha256": "12d76759837da9455a2adaf5387d7ca6298296757f898f08c5d699097f583f48"
+    },
+    "sessions": {
+      "path": "sessions-redacted.zip",
+      "sha256": "e98cd4c342e09fea4298aa66f9137912d7d89341cacbeccab1cf9d64a1ee7a54"
+    }
+  },
+  "redaction": {
+    "reviewedByContributor": true,
+    "containsCredentials": false,
+    "redistributionAllowed": true,
+    "method": "literal-path redaction (/storage/Users/<user> -> /redacted/home, run dir -> /redacted/run, DSH_HOME -> /redacted/dsh-home), credential-pattern scrub, then automated secret scan; no provider keys or DSH home contents included"
+  },
+  "result": {
+    "status": "no-observed-regression",
+    "baselineTokens": 189042,
+    "candidateTokens": 267183,
+    "savings": -0.41335258831370814,
+    "baselineSuccesses": 6,
+    "candidateSuccesses": 6,
+    "tasks": 6
+  }
+}

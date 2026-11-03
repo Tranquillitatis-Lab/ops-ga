@@ -1,0 +1,81 @@
+Current-OPS rerun on the 2026-11-03 framework — dsh-ops 0.4.4 only (negative result, paired holdout)
+
+WHAT THIS IS
+  A rerun of the updated framework (engine ops-ga-engine-4) on the same HarmonyOS arm64 host,
+  against dsh-ops 0.4.4 only, with a freshly approved CNY 20 budget. It exercises the parts the
+  2026-11-03 update added: the preflight campaign bound, the automatic doctor check before paid
+  execution, the stratified 18-task representative suite (bin/ops-ga.mjs suite), the balanced
+  paired final protocol with repetition/task clustering, and the per-session usage accounting
+  that prices cached input separately.
+
+HOST, PINS AND PORT
+  DSH 0.2.1-rc.2 source build @ 687f282e8625c6b8d11ff58211a90524be2e4317, node 26.10.0,
+  HarmonyOS MNT-W72C (HongMeng kernel 1.13.0, aarch64), process.platform = 'openharmony'.
+  Model deepseek-official / deepseek-flash, reasoningEffort high, dedicated DSH_HOME + headless
+  profile; the live DSH home was never used.
+  OPS is the official dsh-ops 0.4.4 package (release tag v0.4.4) with its native worker rebuilt
+  from that tag for aarch64-linux-ohos. Three OHOS-only adaptations are required before any file
+  tool works on this kernel: an openat2 ENOSYS guard in a vendored cap-primitives, a path walk
+  that starts from the deepest openable ancestor (open('/') is denied here), and a best-effort
+  inherited-ACL clear (hmdfs answers EPERM). See payload/ops-port.md. The run made 169 ops_*
+  tool calls with 2 errors across all episodes (ops_inspect_local_file 60, ops_read_files 46,
+  ops_glob 28, ops_grep 17, ops_edit_file 11, ops_discover_tools 7), so the OPS wire surface was
+  genuinely exercised, not merely installed.
+
+PROTOCOL
+  18-task suite from `node bin/ops-ga.mjs suite`: 6 families (discovery, paging, multi-file-edit,
+  aggregation, triage, repair) x 3 splits, distinct data per split. Search: population 3,
+  generations 1, elites 2, llmMutation false (reviewed seeded breeding only, so no paid proposal
+  attempts). evaluation: { repetitions: 1, order: 'balanced' }. Final: balanced paired schedule,
+  task-cluster bootstrap statistics, taskManifestHash recorded in the protocol.
+  Preflight before inference: 54-call conservative upper bound, plannedFits false because
+  54 x CNY 3.20 reservation exceeds the approved CNY 20 ceiling. That warning is the advertised
+  pessimistic bound (it assumes every call bills its whole reservation); the ledger is the real
+  cap and settled at CNY 0.82.
+
+BUDGET (fresh approval, one ledger per output directory)
+  run-real-004 (aborted attempt): per-call guard tripped on paging-gate at 150,000 tokens
+    (measured 173,593 tokens, 12 steps); 7 calls settled (~CNY 0.08) plus one reservation left
+    unknown. The framework stopped immediately and kept the reservation; it was not retried.
+  run-real-005 (this submission): 48 calls, 1,962,334 tokens, settled CNY 0.82 (conservative
+    bound CNY 15.70), pending false, no overshoot. Reserve was raised to 400,000 tokens per call
+    after the measured abort.
+  Total for the window: about CNY 0.9 of the approved CNY 20.
+
+RESULT (negative: the gate winner inverted on the holdout)
+  Train: baseline 297,005 tokens / 6 resolved; winner c12a32e7db5e9f253360 200,813 / 6 (-32%);
+  third candidate 282,981 / 6. Gate: winner 264,764 vs 235,342/275,190-class rivals, 6/6 both.
+  Held-out paired (6 tasks, one observation each, balanced order):
+    baseline 189,042 tokens, 6/6 resolved; candidate 267,183 tokens, 6/6 resolved
+    savings -41.3%; mean task token delta +13,023.5; task-cluster bootstrap CI95 [+668, +32,356]
+  Per family (baseline -> candidate tokens):
+    discovery        29,379 ->  31,492  (+2,113)
+    paging           29,147 ->  86,602  (+57,455)   <- the whole inversion
+    multi-file-edit  30,637 ->  46,232  (+15,595)
+    aggregation      16,516 ->  17,635  (+1,119)
+    triage           28,790 ->  26,586  (-2,204)
+    repair           54,573 ->  58,636  (+4,063)
+  export refuses: 'No measured token improvement'. Both arms resolved every task, so this is a
+  token regression, not a quality regression, and the framework is right not to publish it.
+
+FINDINGS
+  1. A candidate that is 32% cheaper on the six-task training split and wins a six-task tuning
+     gate can still cost 41% more on the held-out split. One family (paging: re-reading a
+     2,500-line file instead of paging it once) accounts for the entire loss. Selection on
+     training/gate token counts is dominated by per-family variance, not by a stable strategy.
+  2. The per-call token guard is a live design constraint on this suite: paging needs more than
+     150,000 tokens in a single session, so a campaign must reserve above the measured worst case
+     (we use 400,000) or it stops on the first heavy episode.
+  3. plannedFits false is expected for a real campaign on this suite at CNY 20: the bound prices
+     every call at its full reservation, which is ~50x the settled estimate here (CNY 0.82
+     actual vs CNY 64.80 bound). Read it as a planning warning, and watch the settled ledger.
+  4. OPS 0.4.4 needs the three platform adaptations above; the released package cannot select a
+     worker on HarmonyOS at all. The optimizer disable list in src/runner.mjs (ids dsh-ops,
+     ops-file, ops-shell, ops-ptc, ops-discovery, ops-sdk) still does not match 0.4.4's rows
+     (dsh-ops-mode-*, dsh-ops-discovery, ...), and unknown ids are ignored silently.
+
+LIMITS
+  One seed, one model, one host, one repetition per task, no kernel sandbox on this host (the
+  explicit danger-full-access acknowledgment is recorded and every record carries
+  sandboxEnforced=false). The suite is a local fixture strata, not a public benchmark. No
+  non-inferiority claim is made; a maintainer must rerun anything relied on.

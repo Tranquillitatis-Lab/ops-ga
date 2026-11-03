@@ -25,7 +25,7 @@
   "artifacts": {
     "optimization": {
       "path": "optimization-package.zip",
-      "sha256": "08a9f9a8b7c555b2822815a28111ea11c85d233d8f8c9123e8f412c84e6c2019"
+      "sha256": "5a64b4b21ab3bc052901d61ce6c55dc2a5f559695385b9c3cde1775b8ad2ba8f"
     },
     "evidence": {
       "path": "evidence.json",

@@ -1,0 +1,377 @@
+{
+  "synthetic": false,
+  "lane": "operations",
+  "benchmark": "custom fixture verifier",
+  "budget": {
+    "currency": "CNY",
+    "spent": 0.816121
+  },
+  "final": {
+    "comparisonKind": "repeated-task-paired",
+    "baselineSelected": false,
+    "independentArms": true,
+    "pairs": [
+      {
+        "task": "discovery-test",
+        "trialId": "discovery-test",
+        "repetition": 0,
+        "baselineEvaluationId": "f7a2d24f620f53a3953b/test/discovery-test",
+        "candidateEvaluationId": "c12a32e7db5e9f253360/test/discovery-test",
+        "reusedEvaluation": false,
+        "baselineTokens": 29379,
+        "candidateTokens": 31492,
+        "tokenDelta": 2113,
+        "baselineSuccess": true,
+        "candidateSuccess": true
+      },
+      {
+        "task": "paging-test",
+        "trialId": "paging-test",
+        "repetition": 0,
+        "baselineEvaluationId": "f7a2d24f620f53a3953b/test/paging-test",
+        "candidateEvaluationId": "c12a32e7db5e9f253360/test/paging-test",
+        "reusedEvaluation": false,
+        "baselineTokens": 29147,
+        "candidateTokens": 86602,
+        "tokenDelta": 57455,
+        "baselineSuccess": true,
+        "candidateSuccess": true
+      },
+      {
+        "task": "multi-file-edit-test",
+        "trialId": "multi-file-edit-test",
+        "repetition": 0,
+        "baselineEvaluationId": "f7a2d24f620f53a3953b/test/multi-file-edit-test",
+        "candidateEvaluationId": "c12a32e7db5e9f253360/test/multi-file-edit-test",
+        "reusedEvaluation": false,
+        "baselineTokens": 30637,
+        "candidateTokens": 46232,
+        "tokenDelta": 15595,
+        "baselineSuccess": true,
+        "candidateSuccess": true
+      },
+      {
+        "task": "aggregation-test",
+        "trialId": "aggregation-test",
+        "repetition": 0,
+        "baselineEvaluationId": "f7a2d24f620f53a3953b/test/aggregation-test",
+        "candidateEvaluationId": "c12a32e7db5e9f253360/test/aggregation-test",
+        "reusedEvaluation": false,
+        "baselineTokens": 16516,
+        "candidateTokens": 17635,
+        "tokenDelta": 1119,
+        "baselineSuccess": true,
+        "candidateSuccess": true
+      },
+      {
+        "task": "triage-test",
+        "trialId": "triage-test",
+        "repetition": 0,
+        "baselineEvaluationId": "f7a2d24f620f53a3953b/test/triage-test",
+        "candidateEvaluationId": "c12a32e7db5e9f253360/test/triage-test",
+        "reusedEvaluation": false,
+        "baselineTokens": 28790,
+        "candidateTokens": 26586,
+        "tokenDelta": -2204,
+        "baselineSuccess": true,
+        "candidateSuccess": true
+      },
+      {
+        "task": "repair-test",
+        "trialId": "repair-test",
+        "repetition": 0,
+        "baselineEvaluationId": "f7a2d24f620f53a3953b/test/repair-test",
+        "candidateEvaluationId": "c12a32e7db5e9f253360/test/repair-test",
+        "reusedEvaluation": false,
+        "baselineTokens": 54573,
+        "candidateTokens": 58636,
+        "tokenDelta": 4063,
+        "baselineSuccess": true,
+        "candidateSuccess": true
+      }
+    ],
+    "limitations": [
+      "sampling-uncontrolled",
+      "cache-uncontrolled"
+    ],
+    "protocol": {
+      "repetitions": 1,
+      "order": "balanced",
+      "schedule": [
+        {
+          "task": "discovery-test",
+          "repetition": 0,
+          "pairId": "0fcac040e2952877f6d3050a20be99aa7eb84aa6d61f3255e0fe1f412bed9832",
+          "order": [
+            "candidate",
+            "baseline"
+          ],
+          "independentArms": true
+        },
+        {
+          "task": "paging-test",
+          "repetition": 0,
+          "pairId": "7529515b17e9cce10efdb149161001eeda9c8c392d04bafb18da3a5e646b5eaa",
+          "order": [
+            "candidate",
+            "baseline"
+          ],
+          "independentArms": true
+        },
+        {
+          "task": "multi-file-edit-test",
+          "repetition": 0,
+          "pairId": "5d92a8394d5cebbf6771df6fd9ee582fa42b1b5b272c0bc65a29fdd2dd3484e7",
+          "order": [
+            "candidate",
+            "baseline"
+          ],
+          "independentArms": true
+        },
+        {
+          "task": "aggregation-test",
+          "repetition": 0,
+          "pairId": "09e26c772191a509abf1ac7c40cc28f7ec526fb1f1fa9664714e1a2c101cc264",
+          "order": [
+            "candidate",
+            "baseline"
+          ],
+          "independentArms": true
+        },
+        {
+          "task": "triage-test",
+          "repetition": 0,
+          "pairId": "30ea610b067fcb03e5e4e71a2e1e2789655a6a4e700edd51ae5f13398f017fb3",
+          "order": [
+            "baseline",
+            "candidate"
+          ],
+          "independentArms": true
+        },
+        {
+          "task": "repair-test",
+          "repetition": 0,
+          "pairId": "331c0deb6c4dc28ff51c27551a71dce06b527081d5144098a3d9fc27ed84be52",
+          "order": [
+            "baseline",
+            "candidate"
+          ],
+          "independentArms": true
+        }
+      ],
+      "taskManifestHash": "6916415c62703f821f86a36ba6f432385aacb0094931975c21e4e502ef89d421",
+      "actualExecution": [
+        {
+          "evaluationId": "c12a32e7db5e9f253360/test/discovery-test",
+          "executionIndex": 36
+        },
+        {
+          "evaluationId": "f7a2d24f620f53a3953b/test/discovery-test",
+          "executionIndex": 37
+        },
+        {
+          "evaluationId": "c12a32e7db5e9f253360/test/paging-test",
+          "executionIndex": 38
+        },
+        {
+          "evaluationId": "f7a2d24f620f53a3953b/test/paging-test",
+          "executionIndex": 39
+        },
+        {
+          "evaluationId": "c12a32e7db5e9f253360/test/multi-file-edit-test",
+          "executionIndex": 40
+        },
+        {
+          "evaluationId": "f7a2d24f620f53a3953b/test/multi-file-edit-test",
+          "executionIndex": 41
+        },
+        {
+          "evaluationId": "c12a32e7db5e9f253360/test/aggregation-test",
+          "executionIndex": 42
+        },
+        {
+          "evaluationId": "f7a2d24f620f53a3953b/test/aggregation-test",
+          "executionIndex": 43
+        },
+        {
+          "evaluationId": "f7a2d24f620f53a3953b/test/triage-test",
+          "executionIndex": 44
+        },
+        {
+          "evaluationId": "c12a32e7db5e9f253360/test/triage-test",
+          "executionIndex": 45
+        },
+        {
+          "evaluationId": "f7a2d24f620f53a3953b/test/repair-test",
+          "executionIndex": 46
+        },
+        {
+          "evaluationId": "c12a32e7db5e9f253360/test/repair-test",
+          "executionIndex": 47
+        }
+      ]
+    },
+    "statistics": {
+      "method": "descriptive-task-cluster-bootstrap-v1",
+      "tasks": 6,
+      "pairedObservations": 6,
+      "meanTaskTokenDelta": 13023.5,
+      "tokenDeltaCI95": [
+        667.6666666666666,
+        32356
+      ],
+      "baselineOnlyResolved": 0,
+      "candidateOnlyResolved": 0,
+      "statisticalNonInferiorityProven": false,
+      "providerSamplingControlled": false,
+      "cacheControlled": false
+    },
+    "status": "no-observed-regression",
+    "regressions": [],
+    "baselineTokens": 189042,
+    "candidateTokens": 267183,
+    "savings": -0.41335258831370814,
+    "baselineSuccesses": 6,
+    "candidateSuccesses": 6,
+    "tasks": 6,
+    "pairedObservations": 6,
+    "synthetic": false,
+    "sandboxEnforced": false,
+    "sandboxEvidence": "sandbox: NOT enforceable (the kernel killed the Landlock probe with SIGSYS); landlock-run --probe exit 159 on HarmonyOS MNT-W72C",
+    "statisticalNonInferiorityProven": false
+  },
+  "rows": [
+    {
+      "instanceId": "discovery-test",
+      "split": "test",
+      "baseline": {
+        "resolved": true,
+        "tokens": 29379,
+        "usageComplete": true,
+        "session": "sessions/discovery-test-baseline.jsonl",
+        "report": "reports/discovery-test-baseline.json",
+        "sessionId": "session-2638e0fc-0bc9-41cc-aa39-f50584cce8c9",
+        "sandboxEnforced": false
+      },
+      "candidate": {
+        "resolved": true,
+        "tokens": 31492,
+        "usageComplete": true,
+        "session": "sessions/discovery-test-candidate.jsonl",
+        "report": "reports/discovery-test-candidate.json",
+        "sessionId": "session-03fd23db-5471-4345-83fa-a60867389c0e",
+        "sandboxEnforced": false
+      }
+    },
+    {
+      "instanceId": "paging-test",
+      "split": "test",
+      "baseline": {
+        "resolved": true,
+        "tokens": 29147,
+        "usageComplete": true,
+        "session": "sessions/paging-test-baseline.jsonl",
+        "report": "reports/paging-test-baseline.json",
+        "sessionId": "session-e131d26f-b262-423c-81aa-c8840a056b5b",
+        "sandboxEnforced": false
+      },
+      "candidate": {
+        "resolved": true,
+        "tokens": 86602,
+        "usageComplete": true,
+        "session": "sessions/paging-test-candidate.jsonl",
+        "report": "reports/paging-test-candidate.json",
+        "sessionId": "session-e7ca5b14-f361-4664-b88f-11f278159271",
+        "sandboxEnforced": false
+      }
+    },
+    {
+      "instanceId": "multi-file-edit-test",
+      "split": "test",
+      "baseline": {
+        "resolved": true,
+        "tokens": 30637,
+        "usageComplete": true,
+        "session": "sessions/multi-file-edit-test-baseline.jsonl",
+        "report": "reports/multi-file-edit-test-baseline.json",
+        "sessionId": "session-d8f0bbab-dcd2-462e-ab42-60b67c70e4ed",
+        "sandboxEnforced": false
+      },
+      "candidate": {
+        "resolved": true,
+        "tokens": 46232,
+        "usageComplete": true,
+        "session": "sessions/multi-file-edit-test-candidate.jsonl",
+        "report": "reports/multi-file-edit-test-candidate.json",
+        "sessionId": "session-ce6b59bd-2647-43ec-931c-7932ca629de4",
+        "sandboxEnforced": false
+      }
+    },
+    {
+      "instanceId": "aggregation-test",
+      "split": "test",
+      "baseline": {
+        "resolved": true,
+        "tokens": 16516,
+        "usageComplete": true,
+        "session": "sessions/aggregation-test-baseline.jsonl",
+        "report": "reports/aggregation-test-baseline.json",
+        "sessionId": "session-e7aa699e-2e57-444c-b539-2552d677e69f",
+        "sandboxEnforced": false
+      },
+      "candidate": {
+        "resolved": true,
+        "tokens": 17635,
+        "usageComplete": true,
+        "session": "sessions/aggregation-test-candidate.jsonl",
+        "report": "reports/aggregation-test-candidate.json",
+        "sessionId": "session-186a7e07-fae4-4aff-a7d7-77c6532990c4",
+        "sandboxEnforced": false
+      }
+    },
+    {
+      "instanceId": "triage-test",
+      "split": "test",
+      "baseline": {
+        "resolved": true,
+        "tokens": 28790,
+        "usageComplete": true,
+        "session": "sessions/triage-test-baseline.jsonl",
+        "report": "reports/triage-test-baseline.json",
+        "sessionId": "session-2123784b-e420-42c1-a5fc-b28c3b6e6291",
+        "sandboxEnforced": false
+      },
+      "candidate": {
+        "resolved": true,
+        "tokens": 26586,
+        "usageComplete": true,
+        "session": "sessions/triage-test-candidate.jsonl",
+        "report": "reports/triage-test-candidate.json",
+        "sessionId": "session-60160506-11c3-404d-ac0d-792b6c99f527",
+        "sandboxEnforced": false
+      }
+    },
+    {
+      "instanceId": "repair-test",
+      "split": "test",
+      "baseline": {
+        "resolved": true,
+        "tokens": 54573,
+        "usageComplete": true,
+        "session": "sessions/repair-test-baseline.jsonl",
+        "report": "reports/repair-test-baseline.json",
+        "sessionId": "session-a5f310f3-61a5-4043-8786-506350125aa6",
+        "sandboxEnforced": false
+      },
+      "candidate": {
+        "resolved": true,
+        "tokens": 58636,
+        "usageComplete": true,
+        "session": "sessions/repair-test-candidate.jsonl",
+        "report": "reports/repair-test-candidate.json",
+        "sessionId": "session-2bccccb9-0e91-481a-ae79-9c81bf441243",
+        "sandboxEnforced": false
+      }
+    }
+  ]
+}

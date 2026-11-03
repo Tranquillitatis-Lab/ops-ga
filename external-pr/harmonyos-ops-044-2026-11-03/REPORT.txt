@@ -43,8 +43,11 @@ BUDGET (fresh approval, one ledger per output directory)
   Total for the window: about CNY 0.9 of the approved CNY 20.
 
 RESULT (negative: the gate winner inverted on the holdout)
-  Train: baseline 297,005 tokens / 6 resolved; winner c12a32e7db5e9f253360 200,813 / 6 (-32%);
-  third candidate 282,981 / 6. Gate: winner 264,764 vs 235,342/275,190-class rivals, 6/6 both.
+  Train (6 tasks): baseline 297,005 tokens / 6 resolved; winner c12a32e7db5e9f253360 200,813 / 6
+  (-32%); third candidate 282,981 / 6.
+  Tuning gate (6 tasks): baseline 185,356 / 6; winner 264,764 / 6 (+43% against the baseline);
+  runner-up ecc5ba8b 275,190 / 6. The winner beat the other candidate but was already 43% more
+  expensive than the baseline on the gate itself, and the search still promoted it (see finding 1).
   Held-out paired (6 tasks, one observation each, balanced order):
     baseline 189,042 tokens, 6/6 resolved; candidate 267,183 tokens, 6/6 resolved
     savings -41.3%; mean task token delta +13,023.5; task-cluster bootstrap CI95 [+668, +32,356]
@@ -59,17 +62,27 @@ RESULT (negative: the gate winner inverted on the holdout)
   token regression, not a quality regression, and the framework is right not to publish it.
 
 FINDINGS
-  1. A candidate that is 32% cheaper on the six-task training split and wins a six-task tuning
+  1. The tuning gate never compared the winner with the baseline. src/genome.mjs select() sorts
+     the shortlist by absolute tokens and uses the reference only to filter regressions, and
+     runSearch() only re-scores the shortlisted genomes on the gate. The baseline was third on
+     the training split (297,005 vs 200,813 and 282,981), so it was never in the gate set. The
+     gate then promoted a candidate at 264,764 tokens while the baseline's own gate cost was
+     185,356: the search therefore published a winner that was already 43% more expensive than
+     the baseline on the tuning gate, and +41% on the held-out split (CI95 [+668, +32,356]).
+     Including the reference in the gate comparison (or ranking candidates against the baseline
+     rather than against each other) would have kept the baseline as champion in this run.
+
+  2. A candidate that is 32% cheaper on the six-task training split and wins a six-task tuning
      gate can still cost 41% more on the held-out split. One family (paging: re-reading a
      2,500-line file instead of paging it once) accounts for the entire loss. Selection on
      training/gate token counts is dominated by per-family variance, not by a stable strategy.
-  2. The per-call token guard is a live design constraint on this suite: paging needs more than
+  3. The per-call token guard is a live design constraint on this suite: paging needs more than
      150,000 tokens in a single session, so a campaign must reserve above the measured worst case
      (we use 400,000) or it stops on the first heavy episode.
-  3. plannedFits false is expected for a real campaign on this suite at CNY 20: the bound prices
+  4. plannedFits false is expected for a real campaign on this suite at CNY 20: the bound prices
      every call at its full reservation, which is ~50x the settled estimate here (CNY 0.82
      actual vs CNY 64.80 bound). Read it as a planning warning, and watch the settled ledger.
-  4. OPS 0.4.4 needs the three platform adaptations above; the released package cannot select a
+  5. OPS 0.4.4 needs the three platform adaptations above; the released package cannot select a
      worker on HarmonyOS at all. The optimizer disable list in src/runner.mjs (ids dsh-ops,
      ops-file, ops-shell, ops-ptc, ops-discovery, ops-sdk) still does not match 0.4.4's rows
      (dsh-ops-mode-*, dsh-ops-discovery, ...), and unknown ids are ignored silently.

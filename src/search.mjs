@@ -27,9 +27,24 @@ export class Budget {
     const result = typeof value === 'number' ? { tokens: value } : value;
     const b = this.state.budget;
     assert(b.pending, 'No pending reservation to settle');
+    const money = monetaryLimits(this.limit);
+    if (result.usageUnknown === true) {
+      // Unaccounted invocation: settle it at the reservation it already holds.
+      // The conservative amount stays charged (nothing can be under-billed), the
+      // gap is written to the ledger, and the campaign continues. The episode is
+      // already marked non-selectable, so it cannot win, be compared or exported.
+      b.unknownUsageInvocations = (b.unknownUsageInvocations ?? 0) + 1;
+      b.unknownUsage ??= [];
+      b.unknownUsage.push({ at: new Date().toISOString(), steps: result.usageGaps ?? null, source: result.usageSource ?? null, chargedTokens: this.limit.reserveTokensPerCall, evidence: result.recoveryEvidence ?? null });
+      b.lastPricing = { estimatedMicros: null, conservativeMicros: null, method: 'unknown-charged-at-reservation', invoiceVerified: false };
+      b.invoiceVerified = false;
+      b.pending = false;
+      await this.persist();
+      assert(b.tokens <= this.limit.maxTokens && (!money.max || b.costMicros <= dollarsToMicros(money.max)), 'Actual usage exceeded reservation: budget overshot; run stopped');
+      return;
+    }
     const pricing = priceUsage(result, this.config);
     b.tokens += result.tokens - this.limit.reserveTokensPerCall;
-    const money = monetaryLimits(this.limit);
     if (money.reserve) b.costMicros += pricing.estimatedMicros - dollarsToMicros(money.reserve);
     b.estimatedSpentMicros = (b.estimatedSpentMicros ?? 0) + pricing.estimatedMicros;
     b.conservativeSpentMicros = (b.conservativeSpentMicros ?? 0) + pricing.conservativeMicros;
@@ -91,7 +106,10 @@ async function score(config, lane, genome, split, ctx, only = null) {
       await persist();
     }
     const result = state.evaluations[key];
-    assert(result.selectionEligible !== false, `${split === 'test' ? 'Final grading incomplete' : id === candidateId(lane, baseline(lane)) ? 'Baseline grading infrastructure failed' : 'Candidate grading infrastructure failed'}; inference usage settled. Inspect receipts and regrade without new inference`);
+    // A grading-infrastructure failure stops the campaign because every later episode
+    // would be paid against a broken grader. An unaccounted invocation only disqualifies
+    // that episode, so it must not abort the run.
+    assert(result.selectionEligible !== false || result.usageUnknown === true, `${split === 'test' ? 'Final grading incomplete' : id === candidateId(lane, baseline(lane)) ? 'Baseline grading infrastructure failed' : 'Candidate grading infrastructure failed'}; inference usage settled. Inspect receipts and regrade without new inference`);
     results.push(result);
   }
   return { id, genome, results, successes: results.filter(r => r.success).length, tokens: results.reduce((s, r) => s + r.tokens, 0) };
@@ -156,7 +174,10 @@ export async function validateFinal(config, lane) {
     paired.protocol = { ...config.evaluation, schedule: state.finalSchedule, taskManifestHash: config.taskManifestHash, actualExecution: [...new Set([...reference.results, ...candidate.results].map(r => r.evaluationId))].map(id => ({ evaluationId: id, executionIndex: state.evaluations[id].executionIndex })).sort((a, b) => a.executionIndex - b.executionIndex) };
     paired.statistics = pairedStatistics(paired.pairs, config.seed);
     const regressions = candidate.results.filter((r, i) => reference.results[i].success && !r.success).map(r => r.task);
-    state.final = { ...paired, status: regressions.length || !candidate.results.every(r => r.safety) ? 'rejected' : 'no-observed-regression', regressions, baselineTokens: reference.tokens, candidateTokens: candidate.tokens, savings: 1 - candidate.tokens / reference.tokens, baselineSuccesses: reference.successes, candidateSuccesses: candidate.successes, tasks: paired.statistics.tasks, pairedObservations: reference.results.length, synthetic: state.synthetic, statisticalNonInferiorityProven: false };
+    // Any unaccounted arm makes the paired claim unsupportable: report it and refuse the
+    // export instead of publishing a comparison built on unknown spend.
+    const unaccounted = [...reference.results, ...candidate.results].filter(r => r.usageUnknown === true).map(r => r.task);
+    state.final = { ...paired, status: regressions.length || unaccounted.length || !candidate.results.every(r => r.safety) ? 'rejected' : 'no-observed-regression', regressions, unaccounted, baselineTokens: reference.tokens, candidateTokens: candidate.tokens, savings: 1 - candidate.tokens / reference.tokens, baselineSuccesses: reference.successes, candidateSuccesses: candidate.successes, tasks: paired.statistics.tasks, pairedObservations: reference.results.length, synthetic: state.synthetic, statisticalNonInferiorityProven: false };
     await persist(); return state.final;
   });
 }

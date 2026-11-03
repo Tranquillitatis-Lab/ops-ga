@@ -103,7 +103,11 @@ export async function analyzeRun(runDirectory, destination, pricing = null) {
         catch (e) { issues.push({ episodeId, code: e.code === 'ENOENT' ? 'session.missing' : 'session.invalid', selectionEligible: false }); }
       }
       const mismatch = facts && facts.tokens !== result.tokens;
-      if (mismatch) issues.push({ episodeId, code: 'usage.state_mismatch', selectionEligible: false });
+      if (facts && facts.usageComplete === false) {
+        // The headless projection dropped some step usage. Separate an episode whose
+        // total was reconciled from DSH's archive from one that genuinely has no number.
+        issues.push({ episodeId, code: result.usageUnknown ? 'usage.unaccounted' : 'usage.reconciled_from_session_log', gaps: facts.usageGaps, selectionEligible: result.usageUnknown ? false : true });
+      } else if (mismatch) issues.push({ episodeId, code: 'usage.state_mismatch', selectionEligible: false });
       episodes.push({ schemaVersion: 'ops-ga.episode-summary/1', episodeId, lane, candidateId, optimizationSplit: split, task,
         tokens: result.tokens, usage: facts?.usage ?? result.usage ?? null, success: result.success, safety: result.safety,
         gradingOutcome: result.gradingOutcome ?? null, selectionEligible: result.selectionEligible ?? true, agentCompleted: result.agentCompleted ?? null,

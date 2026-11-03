@@ -6,14 +6,22 @@ import { verifyExposure } from './exposure.mjs';
 import { execute } from './process.mjs';
 import { render } from './genome.mjs';
 import { adapterCall } from './adapter.mjs';
+import { recoverSessionUsage } from './session-usage.mjs';
 
 export function dshLaunch(runner) {
   if (process.platform === 'win32' && /\.cmd$/i.test(runner.command)) return { command: 'powershell.exe', args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', fileURLToPath(new URL('../bin/launch-dsh.ps1', import.meta.url)), '-DshBin', runner.command, ...runner.args] };
   return { command: runner.command, args: runner.args };
 }
+// Live guard for ONE paid invocation. It answers a single question: has this
+// invocation already outspent the reservation taken for it? A missing or
+// malformed usage event is a missing measurement, not evidence of runaway
+// spending, so it is recorded as a gap and reconciled after the process ends.
+// The remaining bound for a gapped invocation is the wall-clock timeout plus the
+// full reservation charged at settlement.
 export function usageGuard(config) {
   let pending = '', tokens = 0;
-  return chunk => {
+  const gaps = [];
+  const guard = chunk => {
     pending += chunk;
     let newline;
     while ((newline = pending.indexOf('\n')) >= 0) {
@@ -21,14 +29,18 @@ export function usageGuard(config) {
       if (!line.trim()) continue;
       const event = JSON.parse(line);
       if (event.type !== 'status' || event.phase !== 'step_end') continue;
-      assert(event.usage, 'Usage missing during paid run; terminating owned process');
       const u = event.usage;
-      const value = u.inputTokens + u.outputTokens + (u.cacheReadTokens ?? 0) + (u.cacheWriteTokens ?? 0);
-      assert(Number.isSafeInteger(value) && value >= 0, 'Invalid live usage');
+      const value = u && typeof u === 'object' && ['inputTokens', 'outputTokens'].every(key => Number.isSafeInteger(u[key]) && u[key] >= 0) &&
+        ['cacheReadTokens', 'cacheWriteTokens'].every(key => u[key] === undefined || (Number.isSafeInteger(u[key]) && u[key] >= 0))
+        ? u.inputTokens + u.outputTokens + (u.cacheReadTokens ?? 0) + (u.cacheWriteTokens ?? 0) : null;
+      if (value === null) { gaps.push({ turn: event.turn, step: event.step }); continue; }
       tokens += value;
       assert(tokens < config.budget.reserveTokensPerCall, 'Call token reservation reached; stopping owned process. Reservation remains charged.');
     }
   };
+  // Exposed so a caller can log how many steps the projection failed to bill.
+  guard.usageGaps = gaps;
+  return guard;
 }
 export function parseHeadless(text) {
   const sourceLines = text.split(/\r?\n/).map((line, index) => ({ line, sourceLine: index + 1 })).filter(e => e.line.trim());
@@ -40,9 +52,13 @@ export function parseHeadless(text) {
   assert(steps.length > 0, 'No model steps');
   let tokens = 0;
   const usage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, reasoningTokens: 0 };
+  // Steps whose usage the projection omitted. They are counted as gaps instead of
+  // aborting the parse; reconcileUsage() then tries to recover them from DSH's
+  // own archive and marks the episode unknown when it cannot.
+  const usageGaps = [];
   for (const step of steps) {
-    assert(step.usage && !step.truncated, 'Missing exact usage; cannot score or claim savings');
     const u = step.usage;
+    if (!u || step.truncated) { usageGaps.push({ turn: step.turn, step: step.step }); continue; }
     for (const key of ['inputTokens', 'outputTokens']) integer(u[key], 0, Number.MAX_SAFE_INTEGER, key);
     for (const key of ['cacheReadTokens', 'cacheWriteTokens', 'totalTokens', 'reasoningTokens']) if (u[key] !== undefined) integer(u[key], 0, Number.MAX_SAFE_INTEGER, key);
     // DSH normalized counters: inputTokens excludes cached input; reasoning is within output.
@@ -73,10 +89,37 @@ export function parseHeadless(text) {
     if (event.type === 'tool_result' && typeof event.status === 'string') toolStatuses[event.status] = (toolStatuses[event.status] ?? 0) + 1;
   }
   const timeline = events.map((event, index) => ({ sourceLine: sourceLines[index].sourceLine, type: event.type, phase: event.phase,
-    ...(event.type === 'status' && event.phase === 'step_end' ? { turn: event.turn, step: event.step, usage: Object.fromEntries(['inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheWriteTokens', 'reasoningTokens', 'totalTokens'].filter(k => event.usage[k] !== undefined).map(k => [k, event.usage[k]])) } : {}),
+    ...(event.type === 'status' && event.phase === 'step_end' ? { turn: event.turn, step: event.step, usage: event.usage ? Object.fromEntries(['inputTokens', 'outputTokens', 'cacheReadTokens', 'cacheWriteTokens', 'reasoningTokens', 'totalTokens'].filter(k => event.usage[k] !== undefined).map(k => [k, event.usage[k]])) : null } : {}),
     ...(event.type === 'tool_call' ? { callId: event.callId, tool: event.tool, inputBytes: Buffer.byteLength(JSON.stringify(event.input ?? null)) } : {}),
     ...(event.type === 'tool_result' ? { callId: event.callId, status: event.status, resultBytes: Buffer.byteLength(JSON.stringify(event.result ?? null)) } : {}) }));
-  return { answer: events.at(-1).text, tokens, usage, timeline, completed: ends.at(-1).reason?.kind === 'completed', termination: ends.at(-1).reason?.kind ?? 'unknown', sessionId: events[0].sessionId, steps: steps.length, structure: identified ? 'identified-steps' : 'legacy-unidentified', toolCounts, toolStatuses };
+  return { answer: events.at(-1).text, tokens, usage, timeline, completed: ends.at(-1).reason?.kind === 'completed', termination: ends.at(-1).reason?.kind ?? 'unknown', sessionId: events[0].sessionId, steps: steps.length, usageGaps, usageComplete: usageGaps.length === 0, structure: identified ? 'identified-steps' : 'legacy-unidentified', toolCounts, toolStatuses };
+}
+
+// Reconcile one parsed invocation against DSH's private archive when the headless
+// projection dropped usage for some steps. Recovery is all-or-nothing: a partial
+// answer would under-charge the ledger, so anything short of every gap is treated
+// as unknown and the episode becomes non-selectable instead of guessed.
+export async function reconcileUsage(config, dir, result) {
+  if (result.usageComplete) return { ...result, usageSource: 'headless-step_end' };
+  const recovered = config.runner.type === 'dsh'
+    ? await recoverSessionUsage({ home: config.runner.home, sessionId: result.sessionId, gaps: result.usageGaps })
+    : null;
+  const complete = recovered?.complete === true;
+  // Audit trail stays next to the episode so a human can re-derive the number.
+  await save(path.join(dir, 'usage.recovery.json'), {
+    version: 1, sessionId: result.sessionId ?? null, gaps: result.usageGaps,
+    recovered: recovered ? { source: recovered.source, file: recovered.file, recoveredSteps: recovered.recoveredSteps, missingSteps: recovered.missingSteps, usage: recovered.usage } : null,
+    resolution: complete ? 'recovered' : 'unknown'
+  });
+  if (!complete) return { ...result, usageUnknown: true, usageSource: 'unrecovered', recoveryEvidence: 'usage.recovery.json' };
+  const lifted = recovered.usage;
+  const liftedTokens = lifted.inputTokens + lifted.outputTokens + lifted.cacheReadTokens + lifted.cacheWriteTokens;
+  return {
+    ...result,
+    tokens: result.tokens + liftedTokens,
+    usage: Object.fromEntries(Object.keys(result.usage).map(key => [key, result.usage[key] + (lifted[key] ?? 0)])),
+    usageComplete: true, usageSource: 'dsh-session-archive', recoveryEvidence: 'usage.recovery.json'
+  };
 }
 
 export function runtimePatch(runner) {
@@ -149,14 +192,15 @@ export async function evaluateWorkspace(config, lane, genome, task, dir, workspa
   const launcher = dshLaunch(config.runner);
   const args = [...launcher.args, '--profile', config.runner.profile, ...(config.runner.sourcePatch ? ['--patch', config.runner.sourcePatch] : []), '--patch', patchFile, '--json'];
   const prompt = `Offline OPS benchmark. Do not delegate, change permissions/configuration or use another model. Work only in this fixture.\n\n${task.baselineWithoutGuidance ? '' : render(lane, genome)}\n\nTask:\n${task.prompt}`;
-  const { stdout, code } = await captureExecution(dir, launcher.command, args, { cwd: workspace, env: { DSH_HOME: config.runner.home, DSH_PERMISSION_MODE: config.runner.permission }, input: prompt, timeoutMs: config.runner.timeoutMs, onStdout: usageGuard(config), allowNonZero: true });
-  const result = parseHeadless(stdout);
+  const guard = usageGuard(config);
+  const { stdout, code } = await captureExecution(dir, launcher.command, args, { cwd: workspace, env: { DSH_HOME: config.runner.home, DSH_PERMISSION_MODE: config.runner.permission }, input: prompt, timeoutMs: config.runner.timeoutMs, onStdout: guard, allowNonZero: true });
+  const result = await reconcileUsage(config, dir, parseHeadless(stdout));
   // Persist counts and identity, not raw conversations containing private data.
   await save(path.join(dir, 'receipt.json'), { ...result, answer: undefined, answerHash: hash(result.answer) });
   const exposure = config.runner.exposure ? await verifyExposure(exposureFile, { ...config.runner.exposure, provider: config.runner.provider, model: config.runner.model, permission: config.runner.permission }, result, config.runner.payloadDigest ?? config.fingerprint) : null;
   const success = code === 0 && result.completed && await verify(task, workspace, result.answer);
   // This is a fixture-level safety check, not a formal proof of sandbox/contract preservation.
-  return { task: task.id, success, safety: true, exposure, safetyScope: exposure ? 'wire-surface-route-policy-verified-not-os-sandbox-proof' : 'local-runtime-guards-not-contract-proof', tokens: result.tokens, usage: result.usage, steps: result.steps, toolCounts: result.toolCounts, toolStatuses: result.toolStatuses, termination: result.termination, structure: result.structure, sessionId: result.sessionId, synthetic: false };
+  return { task: task.id, success, safety: true, exposure, safetyScope: exposure ? 'wire-surface-route-policy-verified-not-os-sandbox-proof' : 'local-runtime-guards-not-contract-proof', tokens: result.tokens, usage: result.usage, steps: result.steps, toolCounts: result.toolCounts, toolStatuses: result.toolStatuses, termination: result.termination, structure: result.structure, sessionId: result.sessionId, synthetic: false, usageSource: result.usageSource, ...(result.usageUnknown ? { usageUnknown: true, selectionEligible: false, usageGaps: result.usageGaps, recoveryEvidence: result.recoveryEvidence } : {}) };
 }
 
 export async function propose(config, lane, parents, feedback, dir) {
@@ -171,10 +215,11 @@ export async function propose(config, lane, parents, feedback, dir) {
   await save(patchFile, [...runtimePatch({ ...config.runner, permission: 'read-only' }), ...['tool-bash', 'tool-pwsh', 'tool-fs', 'tool-fs-search', 'tool-web', 'tool-skill', 'dsh-ops', 'ops-file', 'ops-shell', 'ops-ptc', 'ops-discovery', 'ops-sdk'].map(id => ({ id, disabled: true }))]);
   const input = `You are an offline bounded interface optimizer. Return ONLY a JSON object containing exactly the genome gene keys; no markdown. Never weaken protected contracts. Edit only gene strings within declared bounds. Focus on expensive successful trajectories, not only failures. Do not use tools, delegate, edit files, reveal credentials or run commands. Parent crossover/mutation is allowed.\nLane: ${JSON.stringify(lane)}\nParents: ${JSON.stringify(parents)}\nAggregate training feedback (no held-out tasks): ${JSON.stringify(feedback)}\nPropose one distinct candidate.`;
   const launcher = dshLaunch(config.runner);
-  const { stdout } = await captureExecution(dir, launcher.command, [...launcher.args, '--profile', config.runner.profile, '--patch', patchFile, '--json'], { cwd: dir, env: { DSH_HOME: config.runner.home, DSH_PERMISSION_MODE: 'read-only' }, input, timeoutMs: config.runner.timeoutMs, onStdout: usageGuard(config) });
-  const result = parseHeadless(stdout);
+  const guard = usageGuard(config);
+  const { stdout } = await captureExecution(dir, launcher.command, [...launcher.args, '--profile', config.runner.profile, '--patch', patchFile, '--json'], { cwd: dir, env: { DSH_HOME: config.runner.home, DSH_PERMISSION_MODE: 'read-only' }, input, timeoutMs: config.runner.timeoutMs, onStdout: guard });
+  const result = await reconcileUsage(config, dir, parseHeadless(stdout));
   await save(path.join(dir, 'receipt.json'), { ...result, answer: undefined, answerHash: hash(result.answer) });
   assert(result.completed, 'Optimizer did not complete');
   // Parsing/validation failures are still charged: caller records usage before validating the genome.
-  return { text: result.answer, tokens: result.tokens, usage: result.usage, steps: result.steps };
+  return { text: result.answer, tokens: result.tokens, usage: result.usage, steps: result.steps, usageSource: result.usageSource, ...(result.usageUnknown ? { usageUnknown: true, usageGaps: result.usageGaps, recoveryEvidence: result.recoveryEvidence } : {}) };
 }

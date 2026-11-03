@@ -32,7 +32,11 @@ test('seeded mutation and crossover are deterministic and bounded', () => {
 });
 test('usage counts cached input, does not double count reasoning', () => assert.equal(parseHeadless(stream()).tokens, 37));
 test('missing, inconsistent, negative usage is never scored as zero', () => {
-  assert.throws(() => parseHeadless(stream(null)), /usage/);
+  // Missing usage becomes a recorded gap with zero known tokens, never a silent zero score.
+  const gap = parseHeadless(stream(null));
+  assert.equal(gap.tokens, 0);
+  assert.equal(gap.usageComplete, false);
+  assert.equal(gap.usageGaps.length, 1);
   assert.throws(() => parseHeadless(stream({ inputTokens: -1, outputTokens: 2 })), /inputTokens/);
   assert.throws(() => parseHeadless(stream({ inputTokens: 10, outputTokens: 2, totalTokens: 100 })), /Inconsistent/);
 });

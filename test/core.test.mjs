@@ -61,9 +61,13 @@ test('fixture paths cannot escape, content checks execute outside the model', as
   assert.equal(await verify({ ...task, check: { ...task.check, value: 'no' } }, workspace, ''), false);
   await assert.rejects(() => safeFile(workspace, '../outside'), /escapes/);
   await assert.rejects(() => safeFile(workspace, 'x\\a'), /POSIX/);
+  // A normal temp path may resolve through Windows 8.3 short names; that alias is not a symlink.
+  assert.equal(await safeFile(workspace, 'x/a.txt'), path.join(workspace, 'x', 'a.txt'));
   try { await symlink(dir, path.join(workspace, 'link'), process.platform === 'win32' ? 'junction' : 'dir'); }
   catch (error) { if (error.code === 'EPERM') return; throw error; }
   await assert.rejects(() => safeFile(workspace, 'link/file'), /Symlink/);
+  // The sandbox root itself must still be rejected when it resolves through a link.
+  await assert.rejects(() => safeFile(path.join(workspace, 'link'), 'file'), /symlink/i);
 });
 test('budget reserves before launch, counts proposals, refuses further calls', async () => {
   const state = { budget: { calls: 0, episodes: 0, tokens: 0 } };

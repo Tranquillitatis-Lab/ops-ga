@@ -1,0 +1,24 @@
+{
+  "fingerprint": "658d9582d9919d46a115df9bf9b4262296685145effb6c8c19252ed5f0864884",
+  "budget": {
+    "calls": 1431,
+    "episodes": 1410,
+    "tokens": 45254261,
+    "pending": false,
+    "accountingUnit": "session-invocation",
+    "currency": "CNY",
+    "costMicros": 27206000,
+    "estimatedSpentMicros": 27206000,
+    "conservativeSpentMicros": 362034088,
+    "modelSteps": 6668,
+    "unknownStepInvocations": 0,
+    "lastPricing": {
+      "estimatedMicros": 11133,
+      "conservativeMicros": 163000,
+      "method": "usage-breakdown",
+      "cachePricesComplete": true,
+      "invoiceVerified": false
+    },
+    "invoiceVerified": false
+  }
+}

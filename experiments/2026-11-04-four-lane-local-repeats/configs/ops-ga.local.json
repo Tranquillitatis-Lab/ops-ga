@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "seed": 42,
+  "output": ".runs/four-lane-2026-11-03b",
+  "runner": {
+    "type": "dsh",
+    "command": "<redacted launcher>",
+    "args": [],
+    "home": "<redacted isolated DSH home>",
+    "profile": "headless",
+    "provider": "deepseek-official",
+    "model": "deepseek-flash",
+    "reasoningEffort": "max",
+    "permission": "workspace-write",
+    "timeoutMs": 1200000,
+    "acknowledgeIsolation": true,
+    "captureSessions": true,
+    "provenance": {
+      "dsh": "0.2.1-rc.5 (packaged desktop runtime, D:/deepseek_harness/resources/runtime)",
+      "ops": "dsh-ops 0.5.0-alpha3 (isolated copy of releases build, D:/DSHtest/plugins)"
+    }
+  },
+  "search": {
+    "population": 3,
+    "generations": 4,
+    "elites": 2,
+    "llmMutation": true
+  },
+  "evaluation": {
+    "repetitions": 5,
+    "order": "balanced",
+    "requireRepresentativeSuite": true
+  },
+  "budget": {
+    "currency": "CNY",
+    "maxCNY": 99999,
+    "reserveCNYPerCall": 8,
+    "confirmedByUser": true,
+    "confirmation": "operator confirmed the monetary ceiling; text redacted",
+    "rates": {
+      "inputCNYPerMillion": 2,
+      "outputCNYPerMillion": 8,
+      "source": "DeepSeek official pricing table https://api-docs.deepseek.com/quick_start/pricing (prior configured peak rates; cache-read rate unspecified, conservatively reserved at highest rate)",
+      "checkedAt": "2026-11-03",
+      "cacheReadCNYPerMillion": 0.04
+    },
+    "maxEpisodes": 4000,
+    "maxCalls": 5000,
+    "maxTokens": 3168000000,
+    "reserveTokensPerCall": 1000000
+  },
+  "maxRegressions": 0,
+  "lanes": [
+    "D:/DSHtest/ops-ga/lanes/operations.json",
+    "D:/DSHtest/ops-ga/lanes/interface.json",
+    "D:/DSHtest/ops-ga/lanes/ptc.json",
+    "D:/DSHtest/ops-ga/lanes/discovery.json"
+  ],
+  "tasksFile": "D:/DSHtest/ops-ga/.local/representative-tasks.json"
+}

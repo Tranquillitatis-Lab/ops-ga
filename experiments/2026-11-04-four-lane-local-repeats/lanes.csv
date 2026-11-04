@@ -1,0 +1,5 @@
+lane,winner,generation,comparisonKind,baselineTokens,candidateTokens,savingsPct,meanTaskTokenDelta,ci95Low,ci95High,tasks,pairedObservations,baselineSuccesses,candidateSuccesses,statisticalNonInferiorityProven,status,unaccounted,regressions
+operations,402522c26038cd04b0cb,4,repeated-task-paired,937399,756400,19.31,-6033.3,-17164.13,901.7,6,30,30,30,false,no-observed-regression,0,0
+interface,4eecb940487d76a2d5ee,4,repeated-task-paired,900228,840551,6.63,-1989.23,-5784.5,1268.9,6,30,30,30,false,no-observed-regression,0,0
+ptc,8aa5b7f839b233a1ebdb,4,identity-control,806674,806674,0,0,0,0,6,30,30,30,false,no-observed-regression,0,0
+discovery,1d53723ba487ab6ba4a3,4,repeated-task-paired,908513,819948,9.75,-2952.17,-7581.07,677.13,6,30,30,30,false,no-observed-regression,0,0

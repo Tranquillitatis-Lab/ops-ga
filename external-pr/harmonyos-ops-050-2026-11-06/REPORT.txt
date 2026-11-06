@@ -1,0 +1,63 @@
+OPS 0.5.0 rerun on HarmonyOS arm64 — first exportable point estimate (12.7%), not established
+
+WHY THIS RUN
+  dsh-ops was released as 0.5.0 on npm, and this host moved to DSH 0.2.2-rc.1. The framework
+  flow was rerun end to end against the current release: preflight -> doctor -> run -> validate
+  -> export -> this package. Budget: a fresh CNY 20 ledger, CNY 0.73 settled (42 calls,
+  2,054,978 tokens, pending false; the conservative bound was CNY 16.44).
+
+PORT (same three OHOS adaptations as before)
+  The 0.5.0 npm package ships win32-x64, linux-x64, darwin-arm64 and darwin-x64 payloads only,
+  and the platform matrix rejects openharmony-arm64. The worker was rebuilt from the package's
+  own native/ sources for aarch64-linux-ohos with: (1) a vendored cap-primitives whose openat2
+  call site returns ENOSYS on target_env=ohos, (2) file_path.rs walking from the deepest
+  openable ancestor because open('/') and open('/storage') are denied, and (3) a best-effort
+  inherited-ACL clear because hmdfs answers EPERM for fremovexattr(system.posix_acl_access).
+  Worker sha256 5ac5a47cee5844c81c0a26336b7b4f7a7c4bc40f27986bdcf4fd66b713d274a2, staged at
+  runtime/openharmony-arm64 with a provenance receipt. Details in payload/ops-port.md.
+  Note: 0.5.0 mounts a single row with id dsh-ops, which is exactly the id ops-ga's propose()
+  disable list expects - the mismatch reported in the previous submission no longer applies.
+
+PROTOCOL
+  Official 18-task representative suite (6 families x 3 splits), population 3, generations 1,
+  elites 2, llmMutation false, evaluation.repetitions 1, balanced paired holdout. DSH 0.2.2-rc.1
+  requires trimming one runtime-patch id (tool-subagent-list-agents no longer exists); otherwise
+  the doctor check refuses the run, which is the behaviour we want.
+
+RESULT
+  Search: baseline was first on training this time (212,649 tokens vs 251,963 and 325,037), so it
+  entered the gate set. Gate: candidate ecc5ba8b37dde0bac421 264,687 vs baseline 316,175 (-16%).
+  Holdout (6 tasks, paired): baseline 365,530 tokens / 6 resolved; candidate 318,937 / 6 resolved.
+  Savings 12.75%, mean task delta -7,765.5, task-cluster bootstrap CI95 [-40,822, +19,494].
+  export succeeded (the framework requires a real final improvement; the point estimate is one).
+  The interval crosses zero, so this is NOT a statistically established saving and the package
+  says so.
+  Per family (baseline -> candidate):
+    discovery        43,739 -> 27,915  (-36.2%)
+    paging          175,557 -> 91,180  (-48.1%)
+    multi-file-edit  27,393 -> 56,988  (+108.1%)
+    aggregation      33,239 -> 28,364  (-14.7%)
+    triage           51,694 -> 46,118  (-10.8%)
+    repair           33,908 -> 68,372  (+101.6%)
+  The winner differs from the baseline in exactly one gene (readStrategy: batch independent
+  targeted reads; strategy text and searchMode are unchanged), so the aggregate is a single
+  discrete switch with opposite signs in different families.
+
+FINDINGS
+  1. This run is the counter-example to the failure mode in the previous submission. There, the
+     baseline ranked third on training, was never shortlisted, and the gate promoted a candidate
+     that was 43% worse than the baseline. Here the baseline ranked first, entered the gate, and
+     the promoted candidate was genuinely cheaper on the gate (-16%). The difference is not the
+     search algorithm: it is whether the reference is in the gate set.
+  2. The gate winner is again a one-gene change. The measured effect is family-dependent, which
+     is why the interval crosses zero even though the aggregate is positive.
+  3. 169 ops_* calls were recorded across the episodes (ops_inspect_local_file 32, ops_read_files
+     20, ops_glob 13, ops_grep 12, ops_edit_file 11, ops_discover_tools 8, ops_stat 2,
+     ops_write_file 1), so the result comes from the OPS wire surface, not from built-ins.
+
+LIMITS
+  One seed, one model, one host, one repetition per task, no kernel sandbox (the explicit
+  danger-full-access acknowledgment is recorded and every record carries sandboxEnforced=false).
+  The suite is local fixture strata, not a public benchmark. The 12.7% is a point estimate with
+  an interval that crosses zero; treat it as a candidate for replication, not as a proven
+  improvement. Maintainers must rerun anything relied on.

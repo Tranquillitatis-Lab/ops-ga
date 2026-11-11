@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "seed": 42,
+  "runner": {
+    "type": "dsh",
+    "command": "/redacted/home/.harmonybrew/bin/node",
+    "args": [
+      "/redacted/home/harness-src/dsh-022rc1/apps/cli/lib/bin.js"
+    ],
+    "home": "dsh-home-053-lc",
+    "profile": "headless",
+    "provider": "deepseek-official",
+    "model": "deepseek-flash",
+    "reasoningEffort": "high",
+    "permission": "danger-full-access",
+    "acknowledgeUnenforcedSandbox": true,
+    "sandboxEvidence": "sandbox: NOT enforceable (the kernel killed the Landlock probe with SIGSYS); landlock-run --probe exit 159 on HarmonyOS MNT-W72C",
+    "timeoutMs": 300000,
+    "acknowledgeIsolation": true,
+    "captureSessions": true,
+    "provenance": {
+      "dsh": "dsh 0.2.2-rc.1 source build @ harness-src/dsh-022rc1, node 26.10.0, HarmonyOS MNT-W72C",
+      "ops": "dsh-ops 0.5.3 from the official v0.5.3 release tarball (sha256 9695b0dc2647c5a4033dfc99a795d61e558913793d7b2352fc21c83952a15163); native worker rebuilt from the same tag for aarch64-linux-ohos (sha256 be5f19db1878f0f73ccb4a8344535190d2c585a982f6ae4ed30a10a001a8a49c) + dsh-live-compact 1.1.5 (npm) as the experimental variable"
+    }
+  },
+  "search": {
+    "population": 3,
+    "generations": 1,
+    "elites": 2,
+    "llmMutation": false
+  },
+  "evaluation": {
+    "repetitions": 1,
+    "order": "balanced"
+  },
+  "budget": {
+    "currency": "CNY",
+    "maxCNY": 20,
+    "reserveCNYPerCall": 3.2,
+    "confirmedByUser": true,
+    "confirmation": "redacted (the paying user approved a fresh CNY 20 ledger per arm)",
+    "rates": {
+      "inputCNYPerMillion": 2,
+      "outputCNYPerMillion": 8,
+      "cacheReadCNYPerMillion": 0.04,
+      "cacheWriteCNYPerMillion": 2,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/ (peak rates, deepseek-flash)",
+      "checkedAt": "2026-11-11"
+    },
+    "maxEpisodes": 240,
+    "maxCalls": 240,
+    "maxTokens": 30000000,
+    "reserveTokensPerCall": 400000
+  },
+  "maxRegressions": 0,
+  "lanes": [
+    "../ops-ga-main/lanes/operations.json",
+    "../ops-ga-main/lanes/interface.json",
+    "../ops-ga-main/lanes/ptc.json",
+    "../ops-ga-main/lanes/discovery.json"
+  ],
+  "tasksFile": "suite-representative.json",
+  "output": ".runs/run-053-lc"
+}

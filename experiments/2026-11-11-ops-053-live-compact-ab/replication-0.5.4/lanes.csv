@@ -1,0 +1,9 @@
+lane,arm,winner,winner_is_baseline,test_baseline_tokens,test_candidate_tokens,savings,baseline_successes,candidate_successes,status
+operations,control,c12a32e7,no,172258,244872,-0.4215,6,6,no-observed-regression
+operations,treatment,f7a2d24f,yes,201777,201777,0.0000,6,6,no-observed-regression
+interface,control,8f41fc29,yes,186025,186025,0.0000,6,6,no-observed-regression
+interface,treatment,8f41fc29,yes,182949,182949,0.0000,6,6,no-observed-regression
+ptc,control,8aa5b7f8,yes,217640,217640,0.0000,6,6,no-observed-regression
+ptc,treatment,8aa5b7f8,yes,190676,190676,0.0000,6,6,no-observed-regression
+discovery,control,e759dae7,no,225111,205056,0.0891,6,6,no-observed-regression
+discovery,treatment,9b488c50,yes,203490,203490,0.0000,6,6,no-observed-regression

@@ -1,0 +1,9 @@
+lane,arm,calls_ledger_share,winner,winner_is_baseline,test_baseline_tokens,test_candidate_tokens,savings,baseline_successes,candidate_successes,status
+operations,control,,f7a2d24f,yes,338390,338390,0.0000,6,6,no-observed-regression
+operations,treatment,,c12a32e7,no,269833,277471,-0.0283,6,5,rejected
+interface,control,,8f41fc29,yes,254974,254974,0.0000,6,6,no-observed-regression
+interface,treatment,,8f41fc29,yes,185093,185093,0.0000,6,6,no-observed-regression
+ptc,control,,5f04af87,no,215473,230292,-0.0688,6,5,rejected
+ptc,treatment,,8aa5b7f8,yes,166780,166780,0.0000,6,6,no-observed-regression
+discovery,control,,9b488c50,yes,289846,289846,0.0000,6,6,no-observed-regression
+discovery,treatment,,9b488c50,yes,219173,219173,0.0000,6,6,no-observed-regression
